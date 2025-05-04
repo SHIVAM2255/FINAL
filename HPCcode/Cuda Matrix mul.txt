@@ -1,0 +1,109 @@
+code = r'''
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+#include <ctime>
+#include <cuda_runtime.h>
+using namespace std;
+
+#define cudaCheckError(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line) {
+    if (code != cudaSuccess) {
+        cerr << "CUDA Error: " << cudaGetErrorString(code) << " at " << file << ":" << line << endl;
+        exit(code);
+    }
+}
+
+__global__ void multiply(int* A, int* B, int* C, int size) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row < size && col < size) {
+        int sum = 0;
+        for (int i = 0; i < size; i++) {
+            sum += A[row * size + i] * B[i * size + col];
+        }
+        C[row * size + col] = sum;
+    }
+}
+
+void initialize(int* matrix, int size) {
+    for (int i = 0; i < size * size; i++) {
+        matrix[i] = rand() % 10;
+    }
+}
+
+void printMatrix(const char* name, int* matrix, int size) {
+    cout << name << " (" << size << "x" << size << "):" << endl;
+    for (int i = 0; i < size; ++i) {
+        cout << "| ";
+        for (int j = 0; j < size; ++j) {
+            cout << setw(3) << matrix[i * size + j] << " ";
+        }
+        cout << "|\n";
+    }
+    cout << endl;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        cerr << "Usage: " << argv[0] << " <matrix_size>" << endl;
+        return 1;
+    }
+
+    int N = atoi(argv[1]); // Read N from command-line
+    srand(time(0));
+
+    size_t bytes = N * N * sizeof(int);
+
+    int *A = new int[N * N];
+    int *B = new int[N * N];
+    int *C = new int[N * N];
+
+    initialize(A, N);
+    initialize(B, N);
+
+    printMatrix("Matrix A", A, N);
+    printMatrix("Matrix B", B, N);
+
+    int *d_A, *d_B, *d_C;
+    cudaCheckError(cudaMalloc(&d_A, bytes));
+    cudaCheckError(cudaMalloc(&d_B, bytes));
+    cudaCheckError(cudaMalloc(&d_C, bytes));
+
+    cudaCheckError(cudaMemcpy(d_A, A, bytes, cudaMemcpyHostToDevice));
+    cudaCheckError(cudaMemcpy(d_B, B, bytes, cudaMemcpyHostToDevice));
+
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((N + 15) / 16, (N + 15) / 16);
+
+    multiply<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, N);
+    cudaCheckError(cudaGetLastError());
+    cudaCheckError(cudaDeviceSynchronize());
+
+    cudaCheckError(cudaMemcpy(C, d_C, bytes, cudaMemcpyDeviceToHost));
+
+    printMatrix("Resultant Matrix C", C, N);
+
+    delete[] A;
+    delete[] B;
+    delete[] C;
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+
+    return 0;
+}
+'''
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+with open("matrix_mul.cu", "w") as f:
+    f.write(code)
+
+# Compile
+!nvcc -arch=sm_75 matrix_mul.cu -o matrix_mul
+
+# Run with desired N (e.g., 4 or 8)
+!./matrix_mul 4
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
