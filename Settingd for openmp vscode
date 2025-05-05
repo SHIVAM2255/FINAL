@@ -15,3 +15,8 @@ auto start = high_resolution_clock::now();
 //
 auto end = high_resolution_clock::now();
 auto duration = duration_cast<milliseconds>(end - start).count();
+
+
+
+ g++ -fopenmp fileName.cpp -o fileName or g++ fileName.cpp -o fileName
+ * 3. Run: ./02_Parallel_DFS or .\02_Parallel_DFS
