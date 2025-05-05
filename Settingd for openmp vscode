@@ -1,3 +1,5 @@
+settings - code runnuer execute - settings.json
+
 "cpp": "cd $dir && g++ -fopenmp -std=c++11 $fullFileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
 
 g++ -fopenmp -std=c++11 $fullFileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt
