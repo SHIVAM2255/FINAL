@@ -5,3 +5,13 @@ settings - code runnuer execute - settings.json
 g++ -fopenmp -std=c++11 $fullFileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt
 
 cd $dir && g++ -fopenmp -std=c++11 $fullFileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt
+
+chrono 
+
+#include <chrono>
+using namespace std::chrono;
+auto start = high_resolution_clock::now();
+//
+//
+auto end = high_resolution_clock::now();
+auto duration = duration_cast<milliseconds>(end - start).count();
